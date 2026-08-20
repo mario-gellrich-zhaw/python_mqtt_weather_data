@@ -1,12 +1,14 @@
+"""Subscribe to an MQTT topic and print incoming temperature readings."""
 import paho.mqtt.client as mqtt
 
 # MQTT broker settings
-broker = "localhost"
-port = 1883
-topic = "sensor/temp"
+BROKER = "localhost"
+PORT = 1883
+TOPIC = "sensor/temp"
 
 # Callback function for when a message is received
-def on_message(client, userdata, message):
+def on_message(_client, _userdata, message):
+    """Print the temperature carried by an incoming MQTT message."""
     payload = message.payload.decode()
     try:
         temperature = float(payload)
@@ -24,10 +26,10 @@ client.on_message = on_message
 # client.on_log = lambda client, userdata, level, buf: print(f"Log: {buf}")
 
 # Connect to the MQTT broker
-client.connect(broker, port)
+client.connect(BROKER, PORT)
 
 # Subscribe to the topic
-client.subscribe(topic)
+client.subscribe(TOPIC)
 
 # Start the MQTT client loop to process messages
 client.loop_forever()

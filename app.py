@@ -1,9 +1,11 @@
+"""Flask/Socket.IO web app that relays MQTT temperature readings to the browser."""
+import warnings
+
 from flask import Flask, render_template
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 import paho.mqtt.client as mqtt
 
 # Ignore warnings
-import warnings
 warnings.filterwarnings("ignore")
 
 # Create a Flask web app
@@ -18,12 +20,14 @@ MQTT_SERVER = "localhost"
 MQTT_TEMP = "sensor/temp"
 
 # The callback for when the client receives a CONNACK response from the server.
-def on_connect(client, userdata, flags, rc):
+def on_connect(mqtt_client, _userdata, _flags, rc):
+    """Subscribe to the temperature topic once connected to the broker."""
     print("Connected with result code " + str(rc))
-    client.subscribe(MQTT_TEMP)
+    mqtt_client.subscribe(MQTT_TEMP)
 
 # The callback for when a PUBLISH message is received from the server.
-def on_message(client, userdata, msg):
+def on_message(_client, _userdata, msg):
+    """Forward numeric MQTT payloads to connected websocket clients."""
     topic = msg.topic
     payload = msg.payload.decode('utf-8')
     try:
@@ -45,6 +49,7 @@ client.connect(MQTT_SERVER, 1883, 60)
 # Define the index route
 @app.route('/')
 def index():
+    """Render the live temperature chart page."""
     return render_template('chart.html')
 
 # Start the web server
