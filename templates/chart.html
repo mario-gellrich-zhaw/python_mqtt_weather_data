@@ -3,112 +3,351 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-Time Sensor Data from Raspberry Pi</title>
+    <title>Lake Zurich Live Weather</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.min.js"></script>
     <style>
-        body {
-            background-color: rgb(29, 28, 28);
-            color: greenyellow;
-            display: flex;
-            justify-content: left;
-            align-items: left;
-            height: 100vh;
+        :root {
+            --accent: #5ee7ff;
+            --accent-warm: #ffb057;
+            --glass: rgba(255, 255, 255, 0.10);
+            --glass-border: rgba(255, 255, 255, 0.22);
+            --text: #f4f8fb;
+            --text-dim: rgba(244, 248, 251, 0.72);
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
             margin: 0;
+            min-height: 100vh;
+            font-family: 'Inter', system-ui, sans-serif;
+            color: var(--text);
         }
-        canvas {
-            background-color: rgb(29, 28, 28);
+
+        body {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px 60px;
+            overflow-x: hidden;
+            background: linear-gradient(180deg,
+                #0b1d3a 0%,
+                #1c3c66 22%,
+                #6b5493 42%,
+                #d97a55 62%,
+                #f2a65a 72%,
+                #10233f 73%,
+                #0b1a30 100%);
         }
-        .chart-container {
-            width: 50%;
+
+        /* Sun glow near the horizon */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(circle at 50% 63%, rgba(255, 214, 150, 0.95) 0%, rgba(255, 176, 87, 0.55) 8%, rgba(255, 176, 87, 0) 20%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Mountain silhouettes */
+        .mountains {
+            position: fixed;
+            left: 0; right: 0; bottom: 27vh;
+            height: 24vh;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .mountains svg { width: 100%; height: 100%; display: block; }
+
+        /* Lake water */
+        .lake {
+            position: fixed;
+            left: 0; right: 0; bottom: 0;
+            height: 27vh;
+            z-index: 1;
+            pointer-events: none;
+            background: linear-gradient(180deg, #3a3b63 0%, #23294a 45%, #141a33 100%);
+        }
+        .lake::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                180deg,
+                rgba(255, 200, 140, 0.10) 0px,
+                rgba(255, 200, 140, 0.10) 2px,
+                transparent 2px,
+                transparent 14px
+            );
+            mix-blend-mode: screen;
+            animation: ripple 6s linear infinite;
+        }
+        @keyframes ripple {
+            0% { background-position-y: 0; }
+            100% { background-position-y: 56px; }
+        }
+
+        main {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 780px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        header { text-align: center; }
+        header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: clamp(1.6rem, 4vw, 2.4rem);
+            margin: 0 0 6px;
+            letter-spacing: 0.02em;
+        }
+        header p {
+            margin: 0;
+            color: var(--text-dim);
+            font-size: 0.95rem;
+        }
+
+        .glass {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .reading {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+        .reading .value {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: clamp(2.4rem, 7vw, 3.4rem);
+            line-height: 1;
+        }
+        .reading .unit {
+            font-size: 1.3rem;
+            color: var(--text-dim);
+        }
+        .reading .label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.18);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+        .dot {
+            width: 9px; height: 9px;
+            border-radius: 50%;
+            background: #ff5f5f;
+            box-shadow: 0 0 8px #ff5f5f;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+        .dot.live {
+            background: #58e07a;
+            box-shadow: 0 0 8px #58e07a;
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.45; }
+        }
+
+        .chart-card { padding: 20px 22px 8px; }
+        .chart-card h2 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0 0 12px;
+            color: var(--text-dim);
+        }
+        .chart-wrap { position: relative; height: 320px; }
+
+        footer {
             text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        @media (max-width: 520px) {
+            .chart-wrap { height: 260px; }
+            .status-row { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
 <body>
-    <div class="chart-container">
-        <h2>Real-Time Temperature Data</h2>
-        <canvas id="temperatureChart"></canvas>
+    <div class="mountains">
+        <svg viewBox="0 0 1200 200" preserveAspectRatio="none">
+            <polygon points="0,200 0,120 180,40 340,140 520,60 700,150 900,70 1050,130 1200,80 1200,200" fill="#1a2743" opacity="0.85"/>
+            <polygon points="0,200 0,160 220,90 420,170 640,110 860,180 1080,120 1200,160 1200,200" fill="#111a30"/>
+        </svg>
     </div>
+    <div class="lake"></div>
+
+    <main>
+        <header>
+            <h1>Lake Zurich Live Weather</h1>
+            <p>Real-time air temperature &middot; Tiefenbrunnen measuring station</p>
+        </header>
+
+        <section class="glass status-row">
+            <div class="reading">
+                <div>
+                    <span class="label">Current temperature</span>
+                    <span class="value" id="currentValue">&mdash;</span><span class="unit">&deg;C</span>
+                </div>
+            </div>
+            <div class="status-pill">
+                <span class="dot" id="statusDot"></span>
+                <span id="statusText">Connecting&hellip;</span>
+            </div>
+        </section>
+
+        <section class="glass chart-card">
+            <h2>Temperature over time</h2>
+            <div class="chart-wrap">
+                <canvas id="temperatureChart"></canvas>
+            </div>
+        </section>
+
+        <footer>Data streamed live via MQTT &amp; Socket.IO</footer>
+    </main>
 
     <script>
+        const MAX_POINTS = 30;
         const temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
+        const currentValueEl = document.getElementById('currentValue');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+
+        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+
+        const gradient = temperatureCtx.createLinearGradient(0, 0, 0, 320);
+        gradient.addColorStop(0, 'rgba(94, 231, 255, 0.35)');
+        gradient.addColorStop(1, 'rgba(94, 231, 255, 0)');
 
         const temperatureChart = new Chart(temperatureCtx, {
             type: 'line',
             data: {
-                labels: [], // Time labels will be added dynamically
+                labels: [],
                 datasets: [{
                     label: 'Temperature (°C)',
                     data: [],
-                    fill: false,
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    tension: 0.1
+                    fill: true,
+                    backgroundColor: gradient,
+                    borderColor: accent,
+                    borderWidth: 2.5,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    pointHoverBackgroundColor: accent,
+                    cubicInterpolationMode: 'monotone',
+                    tension: 0.35
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                interaction: { intersect: false, mode: 'index' },
                 plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top',
-                        labels: {
-                            color: 'greenyellow' // Legend text color
-                        }
-                    },
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 25, 45, 0.9)',
+                        titleColor: '#f4f8fb',
+                        bodyColor: '#f4f8fb',
+                        borderColor: 'rgba(255,255,255,0.15)',
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: false
+                    }
                 },
                 scales: {
                     x: {
                         display: true,
-                        title: {
-                            display: true,
-                            text: 'Time',
-                            color: 'greenyellow' // X-axis title color
-                        },
-                        ticks: {
-                            color: 'greenyellow' // X-axis labels color
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.2)' // X-axis grid lines color
-                        }
+                        ticks: { color: 'rgba(244,248,251,0.6)', maxRotation: 0, autoSkip: true, maxTicksLimit: 6 },
+                        grid: { color: 'rgba(255,255,255,0.06)' }
                     },
                     y: {
                         display: true,
                         title: {
                             display: true,
                             text: 'Temperature (°C)',
-                            color: 'greenyellow' // Y-axis title color
+                            color: 'rgba(244,248,251,0.6)'
                         },
-                        ticks: {
-                            color: 'greenyellow' // Y-axis labels color
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.2)' // Y-axis grid lines color
-                        },
-                        min: 0, // Set the minimum value of the y-axis
-                        max: 50 // Set the maximum value of the y-axis
+                        ticks: { color: 'rgba(244,248,251,0.6)' },
+                        grid: { color: 'rgba(255,255,255,0.06)' },
+                        min: 0,
+                        max: 50
                     }
                 }
             }
         });
 
-        // Establish a Socket.IO connection
         const socket = io();
 
-        // Listen for 'mqtt_message' event
+        socket.on('connect', () => {
+            statusDot.classList.add('live');
+            statusText.textContent = 'Live';
+        });
+
+        socket.on('disconnect', () => {
+            statusDot.classList.remove('live');
+            statusText.textContent = 'Disconnected';
+        });
+
         socket.on('mqtt_message', function(msg) {
-            const topic = msg.topic;
-            const data = msg.data;
+            if (msg.topic !== 'sensor/temp') {
+                return;
+            }
+            const value = parseFloat(msg.data);
             const currentTime = new Date().toLocaleTimeString();
 
-            if (topic === "sensor/temp") {
-                // Add new data to the temperature chart
-                temperatureChart.data.labels.push(currentTime);
-                temperatureChart.data.datasets[0].data.push(parseFloat(data));
+            currentValueEl.textContent = value.toFixed(1);
 
-                // Update the temperature chart
-                temperatureChart.update();
+            temperatureChart.data.labels.push(currentTime);
+            temperatureChart.data.datasets[0].data.push(value);
+
+            if (temperatureChart.data.labels.length > MAX_POINTS) {
+                temperatureChart.data.labels.shift();
+                temperatureChart.data.datasets[0].data.shift();
             }
+
+            temperatureChart.update();
         });
     </script>
 </body>
