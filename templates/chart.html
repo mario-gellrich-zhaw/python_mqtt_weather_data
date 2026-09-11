@@ -11,12 +11,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.min.js"></script>
     <style>
         :root {
-            --accent: #8fd4ff;
-            --accent-warm: #ffb057;
-            --glass: rgba(20, 30, 45, 0.35);
-            --glass-border: rgba(255, 255, 255, 0.22);
-            --text: #f4f8fb;
-            --text-dim: rgba(244, 248, 251, 0.78);
+            --accent: #ffb057;
+            --accent-warm: #ff8a5c;
+            --glass: rgba(40, 24, 14, 0.32);
+            --glass-border: rgba(255, 220, 180, 0.28);
+            --text: #fff7ef;
+            --text-dim: rgba(255, 247, 239, 0.78);
         }
 
         * { box-sizing: border-box; }
@@ -36,42 +36,19 @@
             padding: 40px 20px 60px;
             overflow-x: hidden;
             background:
-                linear-gradient(180deg, rgba(8, 18, 34, 0.55) 0%, rgba(8, 18, 34, 0.35) 40%, rgba(6, 14, 28, 0.75) 100%),
-                url('https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Z%C3%BCrich_Winter.jpg/1280px-Z%C3%BCrich_Winter.jpg') center center / cover no-repeat fixed;
+                linear-gradient(180deg, rgba(30, 16, 10, 0.55) 0%, rgba(40, 20, 10, 0.25) 40%, rgba(20, 10, 8, 0.75) 100%),
+                url('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Wurmsbach_Sunset.jpg/1280px-Wurmsbach_Sunset.jpg') center center / cover no-repeat fixed;
         }
 
-        /* Soft cold haze near the horizon */
+        /* Warm glow near the sun on the horizon */
         body::before {
             content: "";
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             background:
-                radial-gradient(ellipse at 50% 100%, rgba(190, 220, 245, 0.28) 0%, rgba(190, 220, 245, 0) 45%);
+                radial-gradient(circle at 62% 38%, rgba(255, 200, 130, 0.35) 0%, rgba(255, 176, 87, 0.12) 18%, rgba(255, 176, 87, 0) 32%);
             pointer-events: none;
             z-index: 0;
-        }
-
-        /* Gently drifting snow */
-        .snow {
-            position: fixed;
-            inset: 0;
-            z-index: 1;
-            pointer-events: none;
-            overflow: hidden;
-        }
-        .snow span {
-            position: absolute;
-            top: -10px;
-            display: block;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.85);
-            animation: fall linear infinite;
-        }
-        @keyframes fall {
-            0% { transform: translateY(-10vh) translateX(0); opacity: 0.9; }
-            100% { transform: translateY(110vh) translateX(20px); opacity: 0.4; }
         }
 
         main {
@@ -197,14 +174,6 @@
     </style>
 </head>
 <body>
-    <div class="mountains">
-        <svg viewBox="0 0 1200 200" preserveAspectRatio="none">
-            <polygon points="0,200 0,120 180,40 340,140 520,60 700,150 900,70 1050,130 1200,80 1200,200" fill="#1a2743" opacity="0.85"/>
-            <polygon points="0,200 0,160 220,90 420,170 640,110 860,180 1080,120 1200,160 1200,200" fill="#111a30"/>
-        </svg>
-    </div>
-    <div class="lake"></div>
-
     <main>
         <header>
             <h1>Lake Zurich Live Weather</h1>
@@ -231,7 +200,10 @@
             </div>
         </section>
 
-        <footer>Data streamed live via MQTT &amp; Socket.IO</footer>
+        <footer>
+            Data streamed live via MQTT &amp; Socket.IO
+            <div class="credit">Photo: Lake Zurich sunset by Adrian Michael (CC BY-SA), via Wikimedia Commons</div>
+        </footer>
     </main>
 
     <script>
@@ -244,8 +216,8 @@
         const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
 
         const gradient = temperatureCtx.createLinearGradient(0, 0, 0, 320);
-        gradient.addColorStop(0, 'rgba(94, 231, 255, 0.35)');
-        gradient.addColorStop(1, 'rgba(94, 231, 255, 0)');
+        gradient.addColorStop(0, 'rgba(255, 176, 87, 0.35)');
+        gradient.addColorStop(1, 'rgba(255, 176, 87, 0)');
 
         const temperatureChart = new Chart(temperatureCtx, {
             type: 'line',
