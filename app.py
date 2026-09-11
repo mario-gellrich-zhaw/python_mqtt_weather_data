@@ -11,7 +11,7 @@ warnings.filterwarnings("ignore")
 # Create a Flask web app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'geheim'
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # IP-Address of broker
 MQTT_SERVER = "localhost"

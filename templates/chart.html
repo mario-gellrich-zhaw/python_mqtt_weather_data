@@ -11,12 +11,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.min.js"></script>
     <style>
         :root {
-            --accent: #5ee7ff;
+            --accent: #8fd4ff;
             --accent-warm: #ffb057;
-            --glass: rgba(255, 255, 255, 0.10);
+            --glass: rgba(20, 30, 45, 0.35);
             --glass-border: rgba(255, 255, 255, 0.22);
             --text: #f4f8fb;
-            --text-dim: rgba(244, 248, 251, 0.72);
+            --text-dim: rgba(244, 248, 251, 0.78);
         }
 
         * { box-sizing: border-box; }
@@ -35,63 +35,43 @@
             align-items: center;
             padding: 40px 20px 60px;
             overflow-x: hidden;
-            background: linear-gradient(180deg,
-                #0b1d3a 0%,
-                #1c3c66 22%,
-                #6b5493 42%,
-                #d97a55 62%,
-                #f2a65a 72%,
-                #10233f 73%,
-                #0b1a30 100%);
+            background:
+                linear-gradient(180deg, rgba(8, 18, 34, 0.55) 0%, rgba(8, 18, 34, 0.35) 40%, rgba(6, 14, 28, 0.75) 100%),
+                url('https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Z%C3%BCrich_Winter.jpg/1280px-Z%C3%BCrich_Winter.jpg') center center / cover no-repeat fixed;
         }
 
-        /* Sun glow near the horizon */
+        /* Soft cold haze near the horizon */
         body::before {
             content: "";
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             background:
-                radial-gradient(circle at 50% 63%, rgba(255, 214, 150, 0.95) 0%, rgba(255, 176, 87, 0.55) 8%, rgba(255, 176, 87, 0) 20%);
+                radial-gradient(ellipse at 50% 100%, rgba(190, 220, 245, 0.28) 0%, rgba(190, 220, 245, 0) 45%);
             pointer-events: none;
             z-index: 0;
         }
 
-        /* Mountain silhouettes */
-        .mountains {
+        /* Gently drifting snow */
+        .snow {
             position: fixed;
-            left: 0; right: 0; bottom: 27vh;
-            height: 24vh;
-            z-index: 1;
-            pointer-events: none;
-        }
-        .mountains svg { width: 100%; height: 100%; display: block; }
-
-        /* Lake water */
-        .lake {
-            position: fixed;
-            left: 0; right: 0; bottom: 0;
-            height: 27vh;
-            z-index: 1;
-            pointer-events: none;
-            background: linear-gradient(180deg, #3a3b63 0%, #23294a 45%, #141a33 100%);
-        }
-        .lake::before {
-            content: "";
-            position: absolute;
             inset: 0;
-            background: repeating-linear-gradient(
-                180deg,
-                rgba(255, 200, 140, 0.10) 0px,
-                rgba(255, 200, 140, 0.10) 2px,
-                transparent 2px,
-                transparent 14px
-            );
-            mix-blend-mode: screen;
-            animation: ripple 6s linear infinite;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
         }
-        @keyframes ripple {
-            0% { background-position-y: 0; }
-            100% { background-position-y: 56px; }
+        .snow span {
+            position: absolute;
+            top: -10px;
+            display: block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.85);
+            animation: fall linear infinite;
+        }
+        @keyframes fall {
+            0% { transform: translateY(-10vh) translateX(0); opacity: 0.9; }
+            100% { transform: translateY(110vh) translateX(20px); opacity: 0.4; }
         }
 
         main {
@@ -202,6 +182,12 @@
             font-size: 0.8rem;
             color: var(--text-dim);
             margin-top: 4px;
+        }
+        footer a { color: inherit; }
+        .credit {
+            font-size: 0.7rem;
+            opacity: 0.6;
+            margin-top: 2px;
         }
 
         @media (max-width: 520px) {
